@@ -344,13 +344,10 @@ The choices that shaped the design, the alternatives considered, and why. Networ
 | Region | eu-west-3 (Paris) | us-east-1, Frankfurt, Milan | Lowest latency for users in North Africa and Europe, every service available. Prices are slightly higher than us-east-1, and the CloudFront certificate and the health-check alarm must still live in us-east-1 |
 | Disaster recovery scope | One Region, two AZs | Second Region on warm standby | Multi-AZ meets the recovery targets for the failures that actually happen. A second Region would roughly double the cost and is a different project; losing all of Paris is an accepted risk |
 | Number of VPCs | One | One VPC per tier | Subnets and chained security groups already isolate the tiers. Several VPCs would add peering or a Transit Gateway with no security gain. Separate VPCs (and accounts) are for separate environments |
-| Path from CloudFront to the ALB | Internal ALB, CloudFront VPC origin | Public ALB locked to CloudFront by IP list and a secret header | No public endpoint at all, and fewer moving parts. VPC origins date from late 2024, so older material shows only the public pattern |
 | WAF placement | On the ALB | On CloudFront | Keeps the web ACL, its logs and the application together in Paris. Rules that depend on the visitor's address read the `X-Viewer-IP` header set by CloudFront. Moving it to CloudFront would block attacks at the edge, an option for later |
-| Load balancer type | Application Load Balancer | Network Load Balancer, Gateway Load Balancer | Only the ALB offers layer 7 routing and AWS WAF. The others serve non-HTTP traffic or third-party appliances |
 | Instances | Graviton `t4g.small`, burstable | `t3` (x86), fixed-performance `m7g` or `c7g` | Graviton is cheaper and more efficient; burstable fits a spiky web workload; 2 GiB leaves memory headroom. See [Burstable instances and CPU credits](#burstable-instances-and-cpu-credits) |
 | Database | RDS for PostgreSQL, Multi-AZ DB instance (`db.t4g.micro`) | Amazon Aurora, RDS Multi-AZ DB cluster | Meets the recovery targets at a fraction of the cost. Aurora fails over faster and scales reads, but its smallest highly available setup costs several times more; it becomes the right choice for read-heavy traffic or sub-minute failover |
 | Outbound filtering | Security group egress rules | AWS Network Firewall | Restricting outbound ports closes the main gap for free. Network Firewall is billed per AZ per hour and would cost more than the whole stack |
-| Messaging and events | None | Amazon SQS, Amazon EventBridge | The application has no background work; every component must have a job. A queue would be added the day work can be done asynchronously |
 
 ---
 
